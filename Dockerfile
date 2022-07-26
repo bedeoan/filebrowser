@@ -1,15 +1,5 @@
-FROM alpine:latest
-RUN apk --update add ca-certificates \
-                     mailcap \
-                     curl
-
-HEALTHCHECK --start-period=2s --interval=5s --timeout=3s \
-  CMD curl -f http://localhost/health || exit 1
-
-VOLUME /srv
-EXPOSE 80
-
-COPY docker_config.json /.filebrowser.json
-COPY filebrowser /filebrowser
-
-ENTRYPOINT [ "/filebrowser" ]
+FROM alpine:latest as helper
+# Similar to the original file, except, /database.db is inside a directory now so that we can assign a volume to it.'
+RUN echo "{'port':80,'baseURL':'','address':'','log':'stdout','database':'/database/database.db','root':'/srv'}" | sed "s/\'/\"/g" >/.edited.json
+FROM filebrowser/filebrowser:latest
+COPY --from=helper /.edited.json /.filebrowser.json
